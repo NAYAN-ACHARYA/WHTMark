@@ -362,4 +362,68 @@ function getAttackParams(type) {
   // Show only first attack param panel
   Object.values(paramMap).forEach(id => $(id).classList.add('hidden'));
   $('param-noise').classList.remove('hidden');
+
+  // Build lightbox DOM once
+  initLightbox();
 })();
+
+// ─────────────────────────────────────────────
+// Lightbox
+// ─────────────────────────────────────────────
+
+function initLightbox() {
+  // Create overlay element
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+  overlay.id = 'lightbox';
+  overlay.innerHTML = `
+    <div class="lightbox-box">
+      <button class="lightbox-close" id="lightbox-close" title="Close">✕</button>
+      <img class="lightbox-img" id="lightbox-img" src="" alt="Preview" />
+      <span class="lightbox-label" id="lightbox-label"></span>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Close on × button
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+
+  // Close on clicking the dark backdrop (outside the box)
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeLightbox();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  // Attach click listeners to all current and future result-img elements
+  // Use event delegation on document so dynamically-shown images are covered
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('result-img') && !e.target.classList.contains('hidden')) {
+      // Find the label from the nearest img-card header
+      const card = e.target.closest('.img-card');
+      const label = card ? card.querySelector('.img-label')?.textContent : '';
+      openLightbox(e.target.src, label);
+    }
+  });
+}
+
+function openLightbox(src, label = '') {
+  const overlay = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-label').textContent = label.toUpperCase();
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  const overlay = document.getElementById('lightbox');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  // Small delay so fade-out finishes before clearing src
+  setTimeout(() => {
+    document.getElementById('lightbox-img').src = '';
+  }, 260);
+}
