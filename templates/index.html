@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WHT Watermark Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-block">
+        <span class="logo-mark">◈</span>
+        <div>
+          <h1 class="site-title">WHT Watermark Lab</h1>
+          <p class="site-sub">Walsh–Hadamard Transform · Dual Color Image Watermarking</p>
+        </div>
+      </div>
+      <nav class="step-nav">
+        <span class="step-pill active" data-step="1">① Upload</span>
+        <span class="step-arrow">→</span>
+        <span class="step-pill" data-step="2">② Embed</span>
+        <span class="step-arrow">→</span>
+        <span class="step-pill" data-step="3">③ Attack</span>
+        <span class="step-arrow">→</span>
+        <span class="step-pill" data-step="4">④ Extract</span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="main-grid">
+
+    <!-- LEFT PANEL: Controls -->
+    <aside class="control-panel">
+
+      <!-- ── STEP 1: Upload ── -->
+      <section class="card" id="card-upload">
+        <div class="card-tag">STEP 01</div>
+        <h2 class="card-title">Upload Images</h2>
+
+        <div class="upload-zone" id="zone-cover" onclick="document.getElementById('inp-cover').click()">
+          <div class="upload-icon">⊞</div>
+          <p class="upload-label">Cover Image</p>
+          <p class="upload-hint">256×256 RGB · PNG / JPG</p>
+          <input type="file" id="inp-cover" accept="image/*" hidden />
+        </div>
+        <div class="preview-strip" id="prev-cover-strip" style="display:none">
+          <img id="prev-cover" class="preview-thumb" />
+          <span class="preview-name" id="prev-cover-name"></span>
+        </div>
+
+        <div class="upload-zone" id="zone-wm" onclick="document.getElementById('inp-wm').click()" style="margin-top:12px">
+          <div class="upload-icon">◈</div>
+          <p class="upload-label">Watermark Image</p>
+          <p class="upload-hint">32×32 RGB · PNG / JPG</p>
+          <input type="file" id="inp-wm" accept="image/*" hidden />
+        </div>
+        <div class="preview-strip" id="prev-wm-strip" style="display:none">
+          <img id="prev-wm" class="preview-thumb" />
+          <span class="preview-name" id="prev-wm-name"></span>
+        </div>
+      </section>
+
+      <!-- ── STEP 2: Embed ── -->
+      <section class="card" id="card-embed">
+        <div class="card-tag">STEP 02</div>
+        <h2 class="card-title">Embed Watermark</h2>
+        <p class="card-desc">Applies entropy-based block selection, Logistic chaotic encryption, WHT transform, and difference-based coefficient embedding.</p>
+        <button class="btn btn-primary" id="btn-embed">
+          <span class="btn-icon">⊕</span> Embed Watermark
+        </button>
+      </section>
+
+      <!-- ── STEP 3: Attack ── -->
+      <section class="card" id="card-attack">
+        <div class="card-tag">STEP 03 · Optional</div>
+        <h2 class="card-title">Attack Simulation</h2>
+        <div class="field-group">
+          <label class="field-label">Attack Type</label>
+          <select class="field-select" id="sel-attack">
+            <option value="gaussian_noise">Gaussian Noise</option>
+            <option value="jpeg_compression">JPEG Compression</option>
+            <option value="cropping">Cropping</option>
+            <option value="rotation">Rotation</option>
+            <option value="scaling">Scaling</option>
+          </select>
+        </div>
+
+        <!-- Dynamic param controls -->
+        <div id="attack-params">
+          <div class="field-group" id="param-noise">
+            <label class="field-label">Noise Variance <span class="param-val" id="val-noise">0.01</span></label>
+            <input type="range" class="field-range" id="rng-noise" min="0.001" max="0.1" step="0.001" value="0.01"
+                   oninput="document.getElementById('val-noise').textContent=this.value" />
+          </div>
+          <div class="field-group hidden" id="param-jpeg">
+            <label class="field-label">JPEG Quality <span class="param-val" id="val-jpeg">50</span></label>
+            <input type="range" class="field-range" id="rng-jpeg" min="10" max="95" step="5" value="50"
+                   oninput="document.getElementById('val-jpeg').textContent=this.value" />
+          </div>
+          <div class="field-group hidden" id="param-crop">
+            <label class="field-label">Crop % <span class="param-val" id="val-crop">10</span>%</label>
+            <input type="range" class="field-range" id="rng-crop" min="5" max="40" step="5" value="10"
+                   oninput="document.getElementById('val-crop').textContent=this.value" />
+          </div>
+          <div class="field-group hidden" id="param-rot">
+            <label class="field-label">Rotation Angle <span class="param-val" id="val-rot">5</span>°</label>
+            <input type="range" class="field-range" id="rng-rot" min="1" max="30" step="1" value="5"
+                   oninput="document.getElementById('val-rot').textContent=this.value" />
+          </div>
+          <div class="field-group hidden" id="param-scale">
+            <label class="field-label">Scale Factor <span class="param-val" id="val-scale">0.90</span></label>
+            <input type="range" class="field-range" id="rng-scale" min="0.5" max="2.0" step="0.05" value="0.90"
+                   oninput="document.getElementById('val-scale').textContent=parseFloat(this.value).toFixed(2)" />
+          </div>
+        </div>
+
+        <button class="btn btn-warning" id="btn-attack">
+          <span class="btn-icon">⚡</span> Run Attack
+        </button>
+      </section>
+
+      <!-- ── STEP 4: Extract ── -->
+      <section class="card" id="card-extract">
+        <div class="card-tag">STEP 04</div>
+        <h2 class="card-title">Extract Watermark</h2>
+        <div class="toggle-row">
+          <span class="toggle-label">Source:</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="chk-use-attacked" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-state" id="extract-source-label">Watermarked</span>
+        </div>
+        <button class="btn btn-secondary" id="btn-extract">
+          <span class="btn-icon">⊗</span> Extract Watermark
+        </button>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT PANEL: Visualizations + Metrics -->
+    <section class="result-panel">
+
+      <!-- Image grid -->
+      <div class="img-grid">
+
+        <div class="img-card" id="ic-original">
+          <div class="img-card-header">
+            <span class="img-tag">COVER</span>
+            <span class="img-label">Original Image</span>
+          </div>
+          <div class="img-frame">
+            <div class="img-placeholder" id="ph-cover">
+              <span>Upload a cover image</span>
+            </div>
+            <img id="disp-cover" class="result-img hidden" />
+          </div>
+        </div>
+
+        <div class="img-card" id="ic-wm-orig">
+          <div class="img-card-header">
+            <span class="img-tag">WATERMARK</span>
+            <span class="img-label">Original Watermark</span>
+          </div>
+          <div class="img-frame">
+            <div class="img-placeholder" id="ph-wm-orig">
+              <span>Upload a watermark</span>
+            </div>
+            <img id="disp-wm-orig" class="result-img hidden" />
+          </div>
+        </div>
+
+        <div class="img-card" id="ic-watermarked">
+          <div class="img-card-header">
+            <span class="img-tag">EMBEDDED</span>
+            <span class="img-label">Watermarked Image</span>
+          </div>
+          <div class="img-frame">
+            <div class="img-placeholder" id="ph-watermarked">
+              <span>Run Embed to see result</span>
+            </div>
+            <img id="disp-watermarked" class="result-img hidden" />
+          </div>
+        </div>
+
+        <div class="img-card" id="ic-attacked">
+          <div class="img-card-header">
+            <span class="img-tag">ATTACKED</span>
+            <span class="img-label">After Attack</span>
+          </div>
+          <div class="img-frame">
+            <div class="img-placeholder" id="ph-attacked">
+              <span>Run Attack Simulation</span>
+            </div>
+            <img id="disp-attacked" class="result-img hidden" />
+          </div>
+        </div>
+
+        <div class="img-card span-2" id="ic-extracted">
+          <div class="img-card-header">
+            <span class="img-tag">EXTRACTED</span>
+            <span class="img-label">Recovered Watermark</span>
+          </div>
+          <div class="img-frame frame-wide">
+            <div class="img-placeholder" id="ph-extracted">
+              <span>Run Extract to recover watermark</span>
+            </div>
+            <img id="disp-extracted" class="result-img hidden" />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Metrics dashboard -->
+      <div class="metrics-panel">
+        <h3 class="metrics-title">◈ Performance Metrics</h3>
+        <div class="metrics-grid">
+
+          <div class="metric-card" id="mc-psnr">
+            <div class="metric-label">PSNR</div>
+            <div class="metric-value" id="mv-psnr">—</div>
+            <div class="metric-unit">dB · imperceptibility</div>
+            <div class="metric-bar-track"><div class="metric-bar" id="mb-psnr"></div></div>
+            <div class="metric-ref">Target ≥ 35 dB</div>
+          </div>
+
+          <div class="metric-card" id="mc-ssim">
+            <div class="metric-label">SSIM</div>
+            <div class="metric-value" id="mv-ssim">—</div>
+            <div class="metric-unit">structural similarity</div>
+            <div class="metric-bar-track"><div class="metric-bar" id="mb-ssim"></div></div>
+            <div class="metric-ref">Target ≥ 0.93</div>
+          </div>
+
+          <div class="metric-card" id="mc-nc">
+            <div class="metric-label">NC</div>
+            <div class="metric-value" id="mv-nc">—</div>
+            <div class="metric-unit">normalized correlation</div>
+            <div class="metric-bar-track"><div class="metric-bar" id="mb-nc"></div></div>
+            <div class="metric-ref">Target ≥ 0.90</div>
+          </div>
+
+          <div class="metric-card" id="mc-ber">
+            <div class="metric-label">BER</div>
+            <div class="metric-value" id="mv-ber">—</div>
+            <div class="metric-unit">bit error rate</div>
+            <div class="metric-bar-track"><div class="metric-bar inverted" id="mb-ber"></div></div>
+            <div class="metric-ref">Target ≈ 0.00</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Algorithm info -->
+      <div class="algo-info">
+        <details class="algo-details">
+          <summary class="algo-summary">◈ Algorithm Pipeline</summary>
+          <div class="algo-steps">
+            <div class="algo-step"><span class="step-num">01</span><span>RGB channel separation</span></div>
+            <div class="algo-step"><span class="step-num">02</span><span>4×4 block partitioning</span></div>
+            <div class="algo-step"><span class="step-num">03</span><span>Entropy-based block selection (E₁+E₂)</span></div>
+            <div class="algo-step"><span class="step-num">04</span><span>Logistic chaotic encryption (μ=4, x₀=0.398)</span></div>
+            <div class="algo-step"><span class="step-num">05</span><span>Walsh-Hadamard Transform (H₄)</span></div>
+            <div class="algo-step"><span class="step-num">06</span><span>Difference-based coefficient pair selection</span></div>
+            <div class="algo-step"><span class="step-num">07</span><span>Quantization embedding (T=8)</span></div>
+            <div class="algo-step"><span class="step-num">08</span><span>Inverse WHT + channel merge</span></div>
+          </div>
+        </details>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ── TOAST ── -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ── LOADER ── -->
+  <div class="loader-overlay hidden" id="loader">
+    <div class="loader-box">
+      <div class="loader-spinner"></div>
+      <p class="loader-msg" id="loader-msg">Processing…</p>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
